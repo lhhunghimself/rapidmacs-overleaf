@@ -73,8 +73,24 @@ Treatment GSM5244531 / SRR14255054; control GSM5244530 / SRR14255053 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Parity criteria.}
-For every measured execution the benchmark records the peak count, the full narrowPeak MD5, the BED3-only MD5, the full summits MD5, and the summit-coordinate-only MD5. A run is rejected unless the complete narrowPeak and summits files match the MACS3~v3.0.3 reference, so performance numbers cannot be reported for a non-parity build. Full-data results: ATAC 50{,}274 peaks (BED3 \texttt{b711b2d6\allowbreak 2ae08620\allowbreak d480df1b\allowbreak 964f98e0}); ChIP-seq 33{,}985 peaks (BED3 \texttt{129a2a50\allowbreak 8b271f8f\allowbreak 34333147\allowbreak c7de218e}, summits \texttt{82ae9573\allowbreak bb99733e\allowbreak 30635cef\allowbreak 96da1f69}); CUT\&RUN 9{,}097 peaks (BED3 \texttt{c7cf0e3b\allowbreak 6e462024\allowbreak 60a71747\allowbreak 3bcfec2e}, summits \texttt{1cd24d0c\allowbreak 399a5ea0\allowbreak b131f8c6\allowbreak e5fe9c7e}).
+\paragraph{Output identity.}
+Both programs write the same files. The MD5 sums below are of the complete
+narrowPeak and summits files, not of any subset of their columns, and are
+identical for MACS3~v3.0.3 and RapidMACS on every one of the 36 measured runs.
+The benchmark harness aborts if they ever differ, so no timing in this paper
+can come from a build that does not reproduce the output.
+
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Assay} & \textbf{Peaks} & \textbf{narrowPeak MD5} & \textbf{summits MD5} \\
+\midrule
+ATAC-seq & 50{,}274 & \texttt{bd191dff\allowbreak 5370d17b\allowbreak 260f9dd3\allowbreak 0ce82b28} & \texttt{579c0091\allowbreak 16544117\allowbreak a4e39044\allowbreak 02ed10ef} \\
+CUT\&RUN & 9{,}097 & \texttt{0fc36102\allowbreak 443eae22\allowbreak 6578201f\allowbreak 18df67c3} & \texttt{1cd24d0c\allowbreak 399a5ea0\allowbreak b131f8c6\allowbreak e5fe9c7e} \\
+ChIP-seq & 33{,}985 & \texttt{5463ccac\allowbreak f4af902c\allowbreak 3ad6f388\allowbreak bd141fc4} & \texttt{82ae9573\allowbreak bb99733e\allowbreak 30635cef\allowbreak 96da1f69} \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \paragraph{Compared commands.}
 \begin{verbatim}
