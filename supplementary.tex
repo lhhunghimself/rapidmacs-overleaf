@@ -25,28 +25,7 @@
 \maketitle
 
 % =============================================================================
-\section{Summit parity and MACS3's \texttt{pos\_array}}
-% =============================================================================
-This section gives the detail behind the two behaviours the main text
-identifies as not recoverable from MACS3's published specification: the
-per-event \texttt{pos\_array} that governs summit selection among tied maxima,
-and the float32 arithmetic of the score tables. MACS3~v3.0.3 is the reference
-throughout; where the two disagreed, RapidMACS was treated as incorrect.
-
-MACS3 selects the median member of a tied pileup maximum after subdividing a peak at the positions held in its internal \texttt{pos\_array}. That array is \emph{per-event}, not per-distinct-value: when a fragment endpoint falls inside a treatment plateau without changing the running pileup (one fragment ending and another starting at the same position, net $\Delta=0$), MACS3 still emits a \texttt{pos\_array} entry. The bedGraph writer collapses adjacent equal-valued runs, so an exported \texttt{.bdg} track matches RapidMACS's collapsed treatment track byte-for-byte while the median is nevertheless computed over more sub-pieces than a collapsed track exposes. The behaviour is therefore invisible in MACS3's own diagnostic output and was diagnosed with an instrumented build of v3.0.3.
-
-RapidMACS reconstructs the array per chromosome: \texttt{treat\_pv} positions from a \texttt{quick\_pileup}-style parallel walk over count-duplicated fragment endpoints (skipping start/end coincidences), \texttt{ctrl\_pv} positions from the \texttt{se\_all\_in\_one\_pileup} walk at $d=\text{llocal}$, then the sorted union. Tied treatment plateaus are split at every interior position before the median tie-pick.
-
-\paragraph{Worked example.}
-The worst-offending peak in the full PBMC~3k ATAC benchmark is \texttt{chr4:\allowbreak 76382069-\allowbreak 76382561}. The exported bedGraph shows three plateaus at treatment $=30$, giving $\text{ties}=3$, $\text{midindex}=1$, and summit $76{,}382{,}470$. MACS3's \texttt{pos\_array} holds six sub-pieces at treatment $=30$ --- the first plateau split at $76{,}382{,}245$ and $76{,}382{,}246$ by llocal-window endpoints of fragments at $76{,}377{,}245$ and $76{,}387{,}246$, the second at $76{,}382{,}470$ --- giving $\text{ties}=6$, $\text{midindex}=2$, and summit $76{,}382{,}248$: a 222~bp difference. Reconstruction matches MACS3 exactly (96/96 positions, 0 differences) and reduces the difference to 0~bp. Across all 50{,}274 ATAC peaks the reconstruction produces zero summit-coordinate differences.
-
-A flag (\texttt{--no-macs3-frag-summit-parity}) selects the documentation-faithful behaviour, which uses less memory and diverges on roughly 2\% of summits at PBMC scale; it is not used for any parity or benchmark result reported here.
-
-\paragraph{Float arithmetic.}
-Byte-identity additionally requires reproducing MACS3's numeric handling: local $\lambda$ is retained as float32 in memory for Poisson scoring, and the $p$/$q$ histogram keys and arithmetic use MACS3's float32 conversions, including at rounding boundaries. Five-decimal rounding is confined to diagnostic bedGraph output. Rounding the in-memory $\lambda$ or using non-MACS3 score-table keys reintroduces $q$-score differences.
-
-% =============================================================================
-\section{Datasets and validation criteria}
+\section{Test datasets and output identity}
 % =============================================================================
 \begin{table}[h]
 \centering
@@ -111,7 +90,7 @@ rapidmacs --preset chip -t treat.bam -c control.bam -g hs -n NAME \
 \end{verbatim}
 
 % =============================================================================
-\section{Benchmark protocol and the MACS3 timing patch}
+\section{Provenance of the measurements}
 % =============================================================================
 The benchmark unit is the standalone executable, including input parsing, peak calling, and narrowPeak/summits output; internal library-only timings are diagnostic and are not the reported comparison. For every assay/tool/thread configuration the harness runs one unrecorded warm-up followed by three recorded repetitions, and reports the median wall time and median maximum RSS with the observed range. Wall time and maximum RSS come from GNU \texttt{/usr/bin/time}; each run writes to a separate directory.
 
@@ -163,9 +142,6 @@ three warm-cache runs after one unrecorded warm-up; error bars span the
 observed range. Every measured narrowPeak and summit file is byte-identical to
 MACS3~v3.0.3.}
 \end{figure}
-
-\paragraph{Scaling limit.}
-Chromosome-level work is scheduled one item per chromosome, so useful parallelism is bounded by the roughly 24 large human chromosomes; small alternate contigs add tasks but little load balance. FRAG decompression and parsing and the genome-wide $p$-to-$q$ table are serial, which is why ATAC input-parse time is flat across thread counts while BAMPE input scales through independent htslib BGZF workers. At high thread counts the final large chromosome plus those serial stages form the floor. Coordinate-region sharding was evaluated and rejected: duplicated cache and output setup plus repeated score work made it slower than chromosome scheduling.
 
 \paragraph{Raw data.}
 All 36 measured invocations, per-run checksums, stage profiles, host metadata, and the exact benchmarked executable hash are archived with the release at \url{https://github.com/morphic-bio/rapidmacs}.
