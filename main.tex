@@ -40,8 +40,7 @@
 
 \subtitle{Genome analysis}
 
-\title[RapidMACS]{RapidMACS: embeddable narrow peak calling up to
-47$\times$ faster than MACS3~v3.0.3, with byte-identical output}
+\title[RapidMACS]{RapidMACS: MACS3-identical narrow peak calling, 47$\times$ faster}
 
 \author[1,$\ast$]{Ling-Hong Hung}
 \author[1]{Ka Yee Yeung}
@@ -60,10 +59,10 @@
 % Applications Note abstract (run-in bold headers)
 % -----------------------------------------------------------------------------
 \abstract{
-\textbf{Motivation:} MACS3 is a comprehensive peak-calling toolkit whose subcommands span single- and paired-end data, narrow and broad peaks, and a range of signal-track utilities. However, many ATAC-seq and multiomic pipelines, including our own, use just one of those capabilities: paired-end narrow peak calling. Furthermore, we wanted an efficient and embeddable narrow peak caller that could be integrated directly with our Chromap Suite aligner, so we wrote RapidMACS.\\
-\textbf{Results:} RapidMACS is a narrow peak caller for paired-end fragments that is optimised for this purpose, including sweep-merge construction of piecewise-constant signal tracks, compact run representations, chromosome-local memoisation of Poisson tail evaluations, and chromosome-level parallelism. Compared with MACS3~v3.0.3 it is 12.6--47.4$\times$ faster on ATAC-seq, 6.1--29.3$\times$ on CUT\&RUN, and 4.3--33.7$\times$ on ChIP-seq at $T=1,4,24$ threads, with byte-identical output. This means that any downstream analysis using RapidMACS will produce identical results to those using MACS3. The speed gains are largely due to these algorithmic changes rather than the choice of language, because MACS3's peak-calling path is itself compiled (Cython). RapidMACS depends only on htslib and zlib and links as a small static archive without a Python or Cython runtime.\\
-\textbf{Availability and implementation:} RapidMACS is open source under the MIT licence at \url{https://github.com/morphic-bio/rapidmacs}, with both a standalone CLI executable (\texttt{rapidmacs}) and a linkable C++ library.\\
-\textbf{Contact:} \href{mailto:lhhung@uw.edu}{lhhung@uw.edu}}
+\subheading{Motivation:} MACS3 is a comprehensive peak-calling toolkit whose subcommands span single- and paired-end data, narrow and broad peaks, and a range of signal-track utilities. However, many ATAC-seq and multiomic pipelines, including our own, use just one of those capabilities: paired-end narrow peak calling. Furthermore, we wanted an efficient and embeddable narrow peak caller that could be integrated directly with our Chromap Suite aligner, so we wrote RapidMACS.
+\subheading{Results:} RapidMACS is a narrow peak caller for paired-end fragments that is optimised for this purpose, including sweep-merge construction of piecewise-constant signal tracks, compact run representations, chromosome-local memoisation of Poisson tail evaluations, and chromosome-level parallelism. Compared with MACS3~v3.0.3 it is 12.6--47.4$\times$ faster on ATAC-seq, 6.1--29.3$\times$ on CUT\&RUN, and 4.3--33.7$\times$ on ChIP-seq at $T=1,4,24$ threads, with byte-identical output. This means that any downstream analysis using RapidMACS will produce identical results to those using MACS3. The speed gains are largely due to these algorithmic changes rather than the choice of language, because MACS3's peak-calling path is itself compiled (Cython). RapidMACS depends only on htslib and zlib and links as a small static archive without a Python or Cython runtime.
+\subheading{Availability and implementation:} RapidMACS is open source under the MIT licence at \url{https://github.com/morphic-bio/rapidmacs}, with both a standalone CLI executable (\texttt{rapidmacs}) and a linkable C++ library.
+\subheading{Contact:} \href{mailto:lhhung@uw.edu}{lhhung@uw.edu}}
 
 \keywords{peak calling, MACS3, ATAC-seq, CUT\&RUN, ChIP-seq, C++ library}
 
