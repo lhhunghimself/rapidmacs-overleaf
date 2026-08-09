@@ -10,3 +10,9 @@
 main.pdf
 supplementary.pdf
 output.*
+
+# Editor/assistant conversation history — never publish
+.specstory/
+.cursorindexingignore
+.cursor/
+.vscode/

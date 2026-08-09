@@ -27,7 +27,11 @@
 % =============================================================================
 \section{Summit parity and MACS3's \texttt{pos\_array}}
 % =============================================================================
-Peak identification, the statistical fields, and summit calling were written clean-room from MACS3's published algorithmic specification. One behaviour could not be reconstructed from the specification alone, and for that behaviour we consulted MACS3's openly available source to determine what the reference implementation does. No MACS3 code is incorporated into RapidMACS in original or translated form. MACS3~v3.0.3 is the reference throughout: where the two disagreed, RapidMACS was treated as incorrect.
+This section gives the detail behind the two behaviours the main text
+identifies as not recoverable from MACS3's published specification: the
+per-event \texttt{pos\_array} that governs summit selection among tied maxima,
+and the float32 arithmetic of the score tables. MACS3~v3.0.3 is the reference
+throughout; where the two disagreed, RapidMACS was treated as incorrect.
 
 MACS3 selects the median member of a tied pileup maximum after subdividing a peak at the positions held in its internal \texttt{pos\_array}. That array is \emph{per-event}, not per-distinct-value: when a fragment endpoint falls inside a treatment plateau without changing the running pileup (one fragment ending and another starting at the same position, net $\Delta=0$), MACS3 still emits a \texttt{pos\_array} entry. The bedGraph writer collapses adjacent equal-valued runs, so an exported \texttt{.bdg} track matches RapidMACS's collapsed treatment track byte-for-byte while the median is nevertheless computed over more sub-pieces than a collapsed track exposes. The behaviour is therefore invisible in MACS3's own diagnostic output and was diagnosed with an instrumented build of v3.0.3.
 
