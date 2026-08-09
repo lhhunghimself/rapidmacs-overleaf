@@ -77,10 +77,25 @@ MACS~\citep{macs3} has been the standard narrow peak caller for chromatin assays
 
 Our work in the MorPhiC consortium, where the same pipeline is run across many datasets and its outputs are deposited for reuse, required an efficient open-source narrow peak caller. MACS3 is open source (BSD-3-Clause) and already fast, being implemented in compiled Cython against the CPython runtime. However, we had to invoke it separately: linking it directly into the rest of our compiled pipeline would have meant shipping the Python interpreter that Cython requires, while invoking \texttt{macs3} as a subprocess would have wasted cycles writing intermediate files and reading them back. We therefore wrote RapidMACS so that it could be linked directly into our Chromap Suite aligner, which extends Chromap~\citep{chromap} and the rest of our pipeline for ATAC-seq and multiomic workflows. Although all we needed was to call narrow peaks on paired-end fragments from ATAC-seq, both ChIP-seq and CUT\&RUN use essentially the same methodology, so RapidMACS supports them as well. In addition to the linkable C++ library that we needed, we added a CLI so that it can also be used as a standalone program in any workflow that currently invokes \texttt{macs3 callpeak} on paired-end input.
 
-The focus on narrow peak calling allowed us to further optimise RapidMACS for this purpose. Using a single thread, RapidMACS is 12.6$\times$ faster on ATAC-seq, 6.1$\times$ faster on CUT\&RUN, and 4.3$\times$ faster on ChIP-seq, with exact parity---every narrowPeak and summit field it writes is byte-identical to MACS3's. We also added parallelism at the chromosome level; at 24 threads RapidMACS is 47.4$\times$ faster on ATAC-seq, 29.3$\times$ faster on CUT\&RUN, and 33.7$\times$ faster on ChIP-seq (Table~\ref{tab:stages}).
+The focus on narrow peak calling allowed us to further optimise RapidMACS for this purpose. Using a single thread, RapidMACS is 12.6$\times$ faster on ATAC-seq, 6.1$\times$ faster on CUT\&RUN, and 4.3$\times$ faster on ChIP-seq, with exact parity---every narrowPeak and summit field it writes is byte-identical to MACS3's. We also added parallelism at the chromosome level; at 24 threads RapidMACS is 47.4$\times$ faster on ATAC-seq, 29.3$\times$ faster on CUT\&RUN, and 33.7$\times$ faster on ChIP-seq. These gains come from specialising the data structures for narrow peak calling rather than from the choice of implementation language; the changes responsible, and the time each stage takes, are set out in Results.
 
-MACS3's peak-calling path is not written in plain Python but compiled to C using Cython, so this is not a comparison between an interpreted implementation and a compiled one; both are compiled. The speed gains come mostly from data structures and optimisations reported stage by stage in Table~\ref{tab:stages}. Input parsing reads gzipped fragments in large blocks with checked integer conversion, and BAM input is decompressed by htslib worker threads. Signal tracks are stored as piecewise-constant runs and built by merging already-sorted fragment endpoints in a single sweep, so their cost depends on the number of positions at which the signal changes rather than on the length of the genome; in the treatment pileup, adjacent runs of equal value are coalesced as they are produced. Where a control is used, the local background is the maximum over four control windows, obtained by merging their already-sorted endpoint streams rather than materialising each window separately. Poisson tail probabilities are memoised per chromosome, because the same (pileup, background) values tend to recur along a track, and the genome-wide $q$-score track is never created. Finally, work is scheduled one chromosome per thread, which is what the 24-thread columns measure.
+% -----------------------------------------------------------------------------
+\section{Implementation}
+% -----------------------------------------------------------------------------
+\paragraph{Scope and limitations.}
+RapidMACS calls narrow peaks on paired-end fragments, with or without a matched input or IgG control. It does not support any other MACS3 subcommands. The narrow scope is sufficient for ATAC-seq and multiomic pipelines, and permits the specialisations described above.
 
+\paragraph{Two ways to use it.}
+As a library, RapidMACS builds to a static archive depending only on htslib~\citep{htslib} and zlib, with no Python or Cython runtime. Its entry point, \texttt{RunMacs3\allowbreak Frag\allowbreak Peak\allowbreak Pipeline\allowbreak From\allowbreak Sorted\allowbreak Iterator}, consumes a fragment iterator, which can be backed by a file or by memory the host already holds. As a standalone program, \texttt{rapidmacs} reads a Chromap/ARC fragments TSV or, via htslib, BAMPE or BEDPE, and writes narrowPeak and summit files; on paired-end input it substitutes for \texttt{macs3 callpeak}.
+
+\paragraph{Open source made exact parity possible.}
+Given the substantial changes in the approach that we have described, we wrote RapidMACS from MACS3's published description rather than porting its code. No MACS3 code is incorporated. This also keeps RapidMACS independent of MACS3's codebase, which is why it can be released under MIT rather than inheriting MACS3's licence. At every stage the procedure was the same: run the new implementation and the reference MACS3 implementation on the same input and compare the output files. RapidMACS was written with AI-assisted programming under human direction, following the approach we describe for STAR Suite~\citep{starsuite}; the stage-by-stage output comparison against a reference implementation also verifies work produced in this manner.
+
+A published description is not a complete specification---for two behaviours we had to read the source code to reproduce them exactly. The first is how MACS3 breaks ties when several positions inside a peak share the maximum pileup: it subdivides the peak at the positions held in an internal array and takes the median sub-piece, and that array retains boundaries which the exported bedGraph collapses, so it cannot be recovered from MACS3's own diagnostic output. The second is numeric: MACS3 holds the local background as a 32-bit float when scoring and uses 32-bit arithmetic for its $p$- and $q$-value lookup tables, and reproducing its scores to the last digit requires doing the same. Because MACS3 is open source we could read and instrument v3.0.3 to establish what it actually does in these two cases, and then reproduce that behaviour in our implementation. Against a closed peak caller the same effort would have yielded a tool that agreed closely and could not be shown to agree exactly. Supplementary Section~S1 gives the detail, including a worked example of the tie-break.
+
+% -----------------------------------------------------------------------------
+\section{Results}
+% -----------------------------------------------------------------------------
 \begin{table*}[!t]
 \begin{center}
 \begin{minipage}{\textwidth}
@@ -96,7 +111,9 @@ count. A dash marks a stage that does not arise separately in that path: for
 ATAC-seq the treatment pileup and local background are built in the same sweep
 as the signal tracks and are counted on that row. The stages listed are the
 dominant ones rather than an exhaustive partition, so they need not sum to the
-total. Every run in every cell produced narrowPeak and summit files
+total. Each figure is the time RapidMACS spends in that stage; it is not an
+attribution of the speedup to the individual change, which would require
+running the caller with each optimisation disabled in turn. Every run in every cell produced narrowPeak and summit files
 byte-identical to MACS3~v3.0.3.\label{tab:stages}}
 \footnotesize
 \setlength{\tabcolsep}{5pt}
@@ -111,7 +128,9 @@ byte-identical to MACS3~v3.0.3.\label{tab:stages}}
 Input parsing --- blocked \texttt{gzread} with checked conversion;
 htslib worker threads for BAM
 & 6.87 & 6.74 & 6.56 & 1.39 & 25.00 & 3.46 \\
-Signal tracks --- sweep-merge of sorted endpoints into piecewise-constant runs
+Track construction --- sweep-merge of sorted endpoints into
+piecewise-constant runs (FRAG); workspace setup only (BAMPE, which builds its
+tracks in the two rows below)
 & 28.59 & 3.16 & 0.06 & 0.07 & 0.05 & 0.05 \\
 Treatment pileup --- equal-valued runs coalesced as they are produced
 & --- & --- & 1.65 & 0.25 & 1.61 & 0.20 \\
@@ -134,26 +153,11 @@ MACS3~v3.0.3, complete program & \multicolumn{2}{c}{743.07} &
 \end{center}
 \end{table*}
 
-% -----------------------------------------------------------------------------
-\section{Implementation}
-% -----------------------------------------------------------------------------
-\paragraph{Scope and limitations.}
-RapidMACS calls narrow peaks on paired-end fragments, with or without a matched input or IgG control. It does not support any other MACS3 subcommands. The narrow scope is sufficient for ATAC-seq and multiomic pipelines, and permits the specialisations described above.
-
-\paragraph{Two ways to use it.}
-As a library, RapidMACS builds to a static archive depending only on htslib~\citep{htslib} and zlib, with no Python or Cython runtime. Its entry point, \texttt{RunMacs3\allowbreak Frag\allowbreak Peak\allowbreak Pipeline\allowbreak From\allowbreak Sorted\allowbreak Iterator}, consumes a fragment iterator, which can be backed by a file or by memory the host already holds. As a standalone program, \texttt{rapidmacs} reads a Chromap/ARC fragments TSV or, via htslib, BAMPE or BEDPE, and writes narrowPeak and summit files; on paired-end input it substitutes for \texttt{macs3 callpeak}.
-
-\paragraph{Open source made exact parity possible.}
-Given the substantial changes in the approach that we have described, we wrote RapidMACS from MACS3's published description rather than porting its code. No MACS3 code is incorporated. This also keeps RapidMACS independent of MACS3's codebase, which is why it can be released under MIT rather than inheriting MACS3's licence. At every stage the procedure was the same: run the new implementation and the reference MACS3 implementation on the same input and compare the output files. RapidMACS was written with AI-assisted programming under human direction, following the approach we describe for STAR Suite~\citep{starsuite}; the stage-by-stage output comparison against a reference implementation also verifies work produced in this manner.
-
-A published description is not a complete specification---for two behaviours we had to read the source code to reproduce them exactly. The first is how MACS3 breaks ties when several positions inside a peak share the maximum pileup: it subdivides the peak at the positions held in an internal array and takes the median sub-piece, and that array retains boundaries which the exported bedGraph collapses, so it cannot be recovered from MACS3's own diagnostic output. The second is numeric: MACS3 holds the local background as a 32-bit float when scoring and uses 32-bit arithmetic for its $p$- and $q$-value lookup tables, and reproducing its scores to the last digit requires doing the same. Because MACS3 is open source we could read and instrument v3.0.3 to establish what it actually does in these two cases, and then reproduce that behaviour in our implementation. Against a closed peak caller the same effort would have yielded a tool that agreed closely and could not be shown to agree exactly. Supplementary Section~S1 gives the detail, including a worked example of the tie-break.
-
-% -----------------------------------------------------------------------------
-\section{Results}
-% -----------------------------------------------------------------------------
 We validated on three full public datasets: the 10x 3K PBMC Multiome ATAC channel, 53.97~M fragments after deduplication~\citep{tenx_pbmc3k_multiome}; ENCODE CTCF ChIP-seq in NCI-H929 with its matched input control (ENCFF686KKV/\allowbreak ENCFF181CXT)~\citep{encode_ctcf_h929}; and K562 CTCF CUT\&RUN with matched IgG (SRR14255054/\allowbreak SRR14255053)~\citep{ng_mynrl15_cutrun}. RapidMACS calls 50{,}274, 33{,}985, and 9{,}097 peaks respectively.
 
 On all three, every narrowPeak and summit field is byte-identical to MACS3~v3.0.3---intervals, peak names, summit offsets and coordinates, signal values, $p$-scores and $q$-scores---and the full-file md5 sums match. By identical, we mean that literally: the same bytes, not the same peaks within a tolerance. Anything computed from a RapidMACS peak or summit file---peak annotation, differential accessibility, motif enrichment, a cell-by-peak count matrix---returns exactly what it would have returned from the MACS3 file, because it is handed the same file. MACS3~v3.0.3 defined the expected output throughout: where the two disagreed during development, RapidMACS was the one assumed to be wrong.
+
+MACS3's peak-calling path is not written in plain Python but compiled to C using Cython, so this is not a comparison between an interpreted implementation and a compiled one; both are compiled. The speed gains come mostly from data structures and optimisations reported stage by stage in Table~\ref{tab:stages}. Input parsing reads gzipped fragments in large blocks with checked integer conversion, and BAM input is decompressed by htslib worker threads. Signal tracks are stored as piecewise-constant runs and built by merging already-sorted fragment endpoints in a single sweep, so their cost depends on the number of positions at which the signal changes rather than on the length of the genome; in the treatment pileup, adjacent runs of equal value are coalesced as they are produced. Where a control is used, the local background is the maximum over four control windows, obtained by merging their already-sorted endpoint streams rather than materialising each window separately. Poisson tail probabilities are memoised per chromosome, because the same (pileup, background) values tend to recur along a track, and the genome-wide $q$-score track is never created. Finally, work is scheduled one chromosome per thread, which is what the 24-thread columns measure.
 
 Table~\ref{tab:stages} gives the wall time of each stage. Against MACS3, RapidMACS is 12.6--47.4$\times$ faster on ATAC-seq, 6.1--29.3$\times$ on CUT\&RUN, and 4.3--33.7$\times$ on ChIP-seq, and every one of the 36 measured runs reproduced the byte-identical output described above. Which stage dominates depends on the assay: track construction for treatment-only ATAC fragments, control-window background for the two controlled BAMPE assays. The serial input parse sets the floor on ATAC scaling, since gzip decompression cannot be divided across chromosomes.
 
