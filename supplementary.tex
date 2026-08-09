@@ -1,0 +1,153 @@
+% RapidMACS — Supplementary Material
+% Builds independently of main.tex:  latexmk -pdf supplementary.tex
+\documentclass[10pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{figures/}}
+
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+
+\title{\textbf{Supplementary Material}\\[4pt]
+\large RapidMACS: embeddable narrow peak calling up to 47$\times$ faster than MACS3~v3.0.3, with byte-identical output}
+\author{Ling-Hong Hung \and Ka Yee Yeung}
+\date{}
+
+\begin{document}
+\maketitle
+
+% =============================================================================
+\section{Summit parity and MACS3's \texttt{pos\_array}}
+% =============================================================================
+Peak identification, the statistical fields, and summit calling were written clean-room from MACS3's published algorithmic specification. One behaviour could not be reconstructed from the specification alone, and for that behaviour we consulted MACS3's openly available source to determine what the reference implementation does. No MACS3 code is incorporated into RapidMACS in original or translated form. MACS3~v3.0.3 is the reference throughout: where the two disagreed, RapidMACS was treated as incorrect.
+
+MACS3 selects the median member of a tied pileup maximum after subdividing a peak at the positions held in its internal \texttt{pos\_array}. That array is \emph{per-event}, not per-distinct-value: when a fragment endpoint falls inside a treatment plateau without changing the running pileup (one fragment ending and another starting at the same position, net $\Delta=0$), MACS3 still emits a \texttt{pos\_array} entry. The bedGraph writer collapses adjacent equal-valued runs, so an exported \texttt{.bdg} track matches RapidMACS's collapsed treatment track byte-for-byte while the median is nevertheless computed over more sub-pieces than a collapsed track exposes. The behaviour is therefore invisible in MACS3's own diagnostic output and was diagnosed with an instrumented build of v3.0.3.
+
+RapidMACS reconstructs the array per chromosome: \texttt{treat\_pv} positions from a \texttt{quick\_pileup}-style parallel walk over count-duplicated fragment endpoints (skipping start/end coincidences), \texttt{ctrl\_pv} positions from the \texttt{se\_all\_in\_one\_pileup} walk at $d=\text{llocal}$, then the sorted union. Tied treatment plateaus are split at every interior position before the median tie-pick.
+
+\paragraph{Worked example.}
+The worst-offending peak in the full PBMC~3k ATAC benchmark is \texttt{chr4:\allowbreak 76382069-\allowbreak 76382561}. The exported bedGraph shows three plateaus at treatment $=30$, giving $\text{ties}=3$, $\text{midindex}=1$, and summit $76{,}382{,}470$. MACS3's \texttt{pos\_array} holds six sub-pieces at treatment $=30$ --- the first plateau split at $76{,}382{,}245$ and $76{,}382{,}246$ by llocal-window endpoints of fragments at $76{,}377{,}245$ and $76{,}387{,}246$, the second at $76{,}382{,}470$ --- giving $\text{ties}=6$, $\text{midindex}=2$, and summit $76{,}382{,}248$: a 222~bp difference. Reconstruction matches MACS3 exactly (96/96 positions, 0 differences) and reduces the difference to 0~bp. Across all 50{,}274 ATAC peaks the reconstruction produces zero summit-coordinate differences.
+
+A flag (\texttt{--no-macs3-frag-summit-parity}) selects the documentation-faithful behaviour, which uses less memory and diverges on roughly 2\% of summits at PBMC scale; it is not used for any parity or benchmark result reported here.
+
+\paragraph{Float arithmetic.}
+Byte-identity additionally requires reproducing MACS3's numeric handling: local $\lambda$ is retained as float32 in memory for Poisson scoring, and the $p$/$q$ histogram keys and arithmetic use MACS3's float32 conversions, including at rounding boundaries. Five-decimal rounding is confined to diagnostic bedGraph output. Rounding the in-memory $\lambda$ or using non-MACS3 score-table keys reintroduces $q$-score differences.
+
+% =============================================================================
+\section{Datasets and validation criteria}
+% =============================================================================
+\begin{table}[h]
+\centering
+\small
+\caption{Benchmark datasets. All inputs are public; both tools consume the
+identical post-alignment file, and alignment is excluded from all timings.}
+\begin{tabular}{@{}p{0.15\textwidth}p{0.36\textwidth}p{0.40\textwidth}@{}}
+\toprule
+\textbf{Assay} & \textbf{Dataset} & \textbf{Accessions} \\
+\midrule
+ATAC-seq & 10x Multiome PBMC 3k, GRCh38 ATAC channel;
+53{,}969{,}811 fragment rows &
+\url{https://www.10xgenomics.com/datasets/pbmc-from-a-healthy-donor-granulocytes-removed-through-cell-sorting-3-k-1-standard-2-0-0} \\
+\addlinespace
+ChIP-seq & ENCODE CTCF in NCI-H929 with matched input control &
+Treatment ENCSR634OAQ / ENCFF686KKV
+(\texttt{bedc2707\allowbreak c0be9f6d\allowbreak 61c09edf\allowbreak 811d655e});
+control ENCSR409FGC / ENCFF181CXT
+(\texttt{ffec8961\allowbreak e15783ba\allowbreak fb161fb7\allowbreak ab534568}) \\
+\addlinespace
+CUT\&RUN & K562 CTCF with matched IgG, GEO series GSE172236 &
+Treatment GSM5244531 / SRR14255054; control GSM5244530 / SRR14255053 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Parity criteria.}
+For every measured execution the benchmark records the peak count, the full narrowPeak MD5, the BED3-only MD5, the full summits MD5, and the summit-coordinate-only MD5. A run is rejected unless the complete narrowPeak and summits files match the MACS3~v3.0.3 reference, so performance numbers cannot be reported for a non-parity build. Full-data results: ATAC 50{,}274 peaks (BED3 \texttt{b711b2d6\allowbreak 2ae08620\allowbreak d480df1b\allowbreak 964f98e0}); ChIP-seq 33{,}985 peaks (BED3 \texttt{129a2a50\allowbreak 8b271f8f\allowbreak 34333147\allowbreak c7de218e}, summits \texttt{82ae9573\allowbreak bb99733e\allowbreak 30635cef\allowbreak 96da1f69}); CUT\&RUN 9{,}097 peaks (BED3 \texttt{c7cf0e3b\allowbreak 6e462024\allowbreak 60a71747\allowbreak 3bcfec2e}, summits \texttt{1cd24d0c\allowbreak 399a5ea0\allowbreak b131f8c6\allowbreak e5fe9c7e}).
+
+\paragraph{Compared commands.}
+\begin{verbatim}
+# ATAC
+macs3 callpeak -t fragments.tsv.gz -f FRAG -g hs -n atac_full \
+  -p 1e-5 --min-length 200 --max-gap 30 --outdir OUT
+rapidmacs --preset shiftTAG -f FRAG -t fragments.tsv.gz -g hs \
+  -n atac_full --peak-caller-threads T -p 1e-5 \
+  --bdgpeakcall-min-len 200 --bdgpeakcall-max-gap 30 \
+  --macs3-frag-narrowpeak OUT/atac.narrowPeak \
+  --macs3-frag-summits OUT/atac.summits.bed
+
+# ChIP-seq / CUT&RUN
+macs3 callpeak -t treat.bam -c control.bam -f BAMPE -g hs -n NAME \
+  -q 0.05 --outdir OUT
+rapidmacs --preset chip -t treat.bam -c control.bam -g hs -n NAME \
+  --peak-caller-threads T --out-prefix OUT/NAME
+\end{verbatim}
+
+% =============================================================================
+\section{Benchmark protocol and the MACS3 timing patch}
+% =============================================================================
+The benchmark unit is the standalone executable, including input parsing, peak calling, and narrowPeak/summits output; internal library-only timings are diagnostic and are not the reported comparison. For every assay/tool/thread configuration the harness runs one unrecorded warm-up followed by three recorded repetitions, and reports the median wall time and median maximum RSS with the observed range. Wall time and maximum RSS come from GNU \texttt{/usr/bin/time}; each run writes to a separate directory.
+
+Warm-cache measurement is deliberate. Dropping the Linux page cache requires privileged, host-wide mutation and would disturb unrelated jobs on the shared benchmark host; a full warm-up per configuration gives both implementations the same cache state and avoids charging cold-cache variance to the peak caller. Stage profiling is enabled consistently for RapidMACS runs and its small overhead is included in the reported RapidMACS wall times. All measurements come from one 13th-generation Intel Core i9-13900KF host with no competing CPU- or I/O-intensive jobs.
+
+\paragraph{MACS3 timing reference.}
+MACS3~v3.0.3's \texttt{PETrackI.pileup\_a\_chromosome\_c} writes its internal paired-end control pileup to \texttt{tmp\_b\_c.txt}. This output is not read by the peak-calling path, and on the datasets used here it is large enough that including it would charge unrelated file I/O to MACS3's measured wall time. For controlled-assay timing only, we therefore removed those four lines; the patch is checked in at \texttt{benchmarks/macs3-3.0.3-no-control-dump.patch}. Stock v3.0.3 generated every parity reference reported here, and the patched and stock executables were verified to produce identical narrowPeak and summits files. Treatment-only ATAC timings are unaffected, as that path does not reach this code. We report this only so the timing comparison is reproducible.
+
+% =============================================================================
+\section{Full benchmark matrix}
+% =============================================================================
+\begin{table}[h]
+\centering
+\small
+\caption{Complete-CLI medians with observed ranges over three warm-cache runs
+after one unrecorded warm-up. Every configuration produced narrowPeak and
+summit files byte-identical to MACS3~v3.0.3.}
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+\textbf{Assay} & \textbf{Tool} & \textbf{$T$} & \textbf{Wall (s)} &
+\textbf{Range} & \textbf{RSS (GiB)} & \textbf{Speedup} \\
+\midrule
+ATAC     & MACS3     & 1  & 743.07 & 740.31--746.04 & 2.397 & 1.00$\times$ \\
+ATAC     & RapidMACS & 1  &  59.14 &  57.78--59.23  & 2.802 & 12.56$\times$ \\
+ATAC     & RapidMACS & 4  &  24.97 &  24.93--25.10  & 3.080 & 29.76$\times$ \\
+ATAC     & RapidMACS & 24 &  15.69 &  15.47--15.78  & 4.053 & 47.36$\times$ \\
+\addlinespace
+CUT\&RUN & MACS3     & 1  &  59.58 &  59.45--59.73  & 0.345 & 1.00$\times$ \\
+CUT\&RUN & RapidMACS & 1  &   9.73 &   9.69--9.75   & 0.459 & 6.12$\times$ \\
+CUT\&RUN & RapidMACS & 4  &   2.96 &   2.96--2.97   & 0.560 & 20.13$\times$ \\
+CUT\&RUN & RapidMACS & 24 &   2.03 &   2.01--2.04   & 0.612 & 29.35$\times$ \\
+\addlinespace
+ChIP-seq & MACS3     & 1  & 402.49 & 400.10--403.34 & 2.705 & 1.00$\times$ \\
+ChIP-seq & RapidMACS & 1  &  93.60 &  93.59--93.62  & 4.763 & 4.30$\times$ \\
+ChIP-seq & RapidMACS & 4  &  27.05 &  26.99--27.06  & 4.889 & 14.88$\times$ \\
+ChIP-seq & RapidMACS & 24 &  11.96 &  11.88--12.15  & 5.346 & 33.65$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{f1d_threadscaling.pdf}
+\caption{\textbf{Wall time and peak memory across thread counts.}
+\textbf{(A)} Complete-CLI wall time (log scale) and \textbf{(B)} peak resident
+memory at $T=1,4,24$ versus MACS3~v3.0.3 on the three public
+datasets. Speedups are annotated above RapidMACS bars. Bars are medians of
+three warm-cache runs after one unrecorded warm-up; error bars span the
+observed range. Every measured narrowPeak and summit file is byte-identical to
+MACS3~v3.0.3.}
+\end{figure}
+
+\paragraph{Scaling limit.}
+Chromosome-level work is scheduled one item per chromosome, so useful parallelism is bounded by the roughly 24 large human chromosomes; small alternate contigs add tasks but little load balance. FRAG decompression and parsing and the genome-wide $p$-to-$q$ table are serial, which is why ATAC input-parse time is flat across thread counts while BAMPE input scales through independent htslib BGZF workers. At high thread counts the final large chromosome plus those serial stages form the floor. Coordinate-region sharding was evaluated and rejected: duplicated cache and output setup plus repeated score work made it slower than chromosome scheduling.
+
+\paragraph{Raw data.}
+All 36 measured invocations, per-run checksums, stage profiles, host metadata, and the exact benchmarked executable hash are archived with the release at \url{https://github.com/morphic-bio/rapidmacs}.
+
+\end{document}
