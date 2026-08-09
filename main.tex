@@ -84,38 +84,48 @@ MACS3's peak-calling path is not written in plain Python but compiled to C using
 \begin{table*}[!t]
 \begin{center}
 \begin{minipage}{\textwidth}
-\caption{\textbf{Algorithmic changes and what each costs.} Per-stage RapidMACS
-medians over three warm-cache runs of the complete CLI, with the end-to-end
-MACS3~v3.0.3 comparison beneath (MACS3's peak-calling path is single-threaded,
-so it is measured at one thread). In the FRAG path used for ATAC-seq the
-treatment pileup and the local background are built in the same sweep, so they
-are reported together on the track-construction row. Every run in every cell
-produced output byte-identical to MACS3~v3.0.3.\label{tab:stages}}
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}p{0.30\textwidth}rrrrrr@{}}
+\caption{\textbf{Where RapidMACS spends its time, and how the total compares
+with MACS3~v3.0.3.} The upper block breaks a RapidMACS run down by pipeline
+stage, each row naming the change that governs that stage; the lower block
+gives the end-to-end time for both programs and the resulting speedup. All
+times are wall-clock seconds for the complete command-line program, medians of
+three warm-cache runs after one unrecorded warm-up, on the three datasets
+described in Results. $T$ is the number of threads; MACS3's peak-calling path
+is single-threaded, so it has one time per assay rather than one per thread
+count. A dash marks a stage that does not arise separately in that path: for
+ATAC-seq the treatment pileup and local background are built in the same sweep
+as the signal tracks and are counted on that row. The stages listed are the
+dominant ones rather than an exhaustive partition, so they need not sum to the
+total. Every run in every cell produced narrowPeak and summit files
+byte-identical to MACS3~v3.0.3.\label{tab:stages}}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}p{0.40\textwidth}rrrrrr@{}}
 \toprule
+& \multicolumn{6}{c}{\textbf{Median wall time (s)}} \\
 & \multicolumn{2}{c}{\textbf{ATAC-seq}} & \multicolumn{2}{c}{\textbf{CUT\&RUN}}
 & \multicolumn{2}{c}{\textbf{ChIP-seq}} \\
-\textbf{Stage and algorithmic change} & $T{=}1$ & $T{=}24$ & $T{=}1$ & $T{=}24$
-& $T{=}1$ & $T{=}24$ \\
+\textbf{Pipeline stage, and the change that governs it}
+& $T{=}1$ & $T{=}24$ & $T{=}1$ & $T{=}24$ & $T{=}1$ & $T{=}24$ \\
 \midrule
-Input parse: blocked \texttt{gzread}; htslib BGZF workers
+Input parsing --- blocked \texttt{gzread} with checked conversion;
+htslib worker threads for BAM
 & 6.87 & 6.74 & 6.56 & 1.39 & 25.00 & 3.46 \\
-Tracks: sweep-merge into piecewise-constant runs
+Signal tracks --- sweep-merge of sorted endpoints into piecewise-constant runs
 & 28.59 & 3.16 & 0.06 & 0.07 & 0.05 & 0.05 \\
-Treatment pileup: coalesced equal-value runs
+Treatment pileup --- equal-valued runs coalesced as they are produced
 & --- & --- & 1.65 & 0.25 & 1.61 & 0.20 \\
-Local $\lambda$: max over four merged control windows
+Local background $\lambda$ --- maximum over four merged control windows
 & --- & --- & 0.97 & 0.13 & 62.97 & 6.87 \\
-$p$-score, regions: chrom-local Poisson memo, no $q$ track
+$p$-scores and peak regions --- chromosome-local Poisson memoisation,
+no genome-wide $q$-score track
 & 16.76 & 4.90 & 0.48 & 0.17 & 3.83 & 1.23 \\
 \midrule
-\textbf{RapidMACS, complete CLI} & \textbf{59.14} & \textbf{15.69} &
+\textbf{RapidMACS, complete program} & \textbf{59.14} & \textbf{15.69} &
 \textbf{9.73} & \textbf{2.03} & \textbf{93.60} & \textbf{11.96} \\
-MACS3~v3.0.3, complete CLI & \multicolumn{2}{c}{743.07} &
+MACS3~v3.0.3, complete program & \multicolumn{2}{c}{743.07} &
 \multicolumn{2}{c}{59.58} & \multicolumn{2}{c}{402.49} \\
-\textbf{Speedup vs MACS3} & \textbf{12.6$\times$} & \textbf{47.4$\times$} &
+\textbf{Speedup} & \textbf{12.6$\times$} & \textbf{47.4$\times$} &
 \textbf{6.1$\times$} & \textbf{29.3$\times$} & \textbf{4.3$\times$} &
 \textbf{33.7$\times$} \\
 \botrule
