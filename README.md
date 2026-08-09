@@ -17,7 +17,8 @@ figures/                     the one figure the supplement includes
 Set `main.tex` as the main document after importing — `supplementary.tex`
 also has a `\documentclass`, so Overleaf may otherwise pick it.
 
-Build locally with `latexmk -pdf main.tex supplementary.tex`.
+Build locally with `make`. `make check` also fails on unresolved references,
+on a line overrunning its column, and on the note exceeding four pages.
 
 Full project history, benchmark data, figure generators and writing notes:
 <https://github.com/lhhunghimself/rapidmacs-paper> (private).
