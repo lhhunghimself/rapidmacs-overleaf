@@ -17,7 +17,7 @@
 \renewcommand{\thefigure}{S\arabic{figure}}
 
 \title{\textbf{Supplementary Material}\\[4pt]
-\large RapidMACS: MACS3-identical peak calling, 45$\times$ faster}
+\large RapidMACS: MACS3-identical peak calling, 47$\times$ faster}
 \author{Ling-Hong Hung \and Ka Yee Yeung}
 \date{}
 
@@ -95,10 +95,15 @@ rapidmacs --preset shiftTAG -f FRAG -t fragments.tsv.gz -g hs \
   --macs3-frag-narrowpeak OUT/atac.narrowPeak \
   --macs3-frag-summits OUT/atac.summits.bed
 
-# ChIP-seq / CUT&RUN
+# ChIP-seq / CUT&RUN (matched control)
 macs3 callpeak -t treat.bam -c control.bam -f BAMPE -g hs -n NAME \
   -q 0.05 --outdir OUT
 rapidmacs --preset chip -t treat.bam -c control.bam -g hs -n NAME \
+  --peak-caller-threads T --out-prefix OUT/NAME
+
+# Bulk ATAC-seq (treatment only)
+macs3 callpeak -t treat.bam -f BAMPE -g hs -n NAME -q 0.05 --outdir OUT
+rapidmacs --preset cutrun -f BAMPE -t treat.bam -g hs -n NAME \
   --peak-caller-threads T --out-prefix OUT/NAME
 \end{verbatim}
 
