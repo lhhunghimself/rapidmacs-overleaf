@@ -5,10 +5,19 @@ all: pdf
 pdf:
 	latexmk -pdf -interaction=nonstopmode main.tex supplementary.tex
 
-# Fail on unresolved references, on text spilling out of a column, and on
-# exceeding the Bioinformatics Applications Note limit of 4 pages
+# Fail on LaTeX errors, unresolved references, text spilling out of a column,
+# and exceeding the Bioinformatics Applications Note limit of 4 pages
 # (~2,600 words, or 2,000 words plus one figure).
 check: pdf
+	@# nonstopmode still emits a PDF after an error, and a second latexmk run
+	@# reports "up-to-date" and exits 0 -- so a broken build passes on the
+	@# rerun unless the log itself is checked. latexmkrc sets -file-line-error,
+	@# so errors read "./main.tex:133: Undefined control sequence." with no
+	@# leading "! ". This is what catches a macro the OUP class does not
+	@# provide (e.g. booktabs' \cmidrule), which renders locally but fails on
+	@# Overleaf.
+	@! grep -hE "^\.?/?[A-Za-z0-9_./-]+\.(tex|sty|cls|bbl):[0-9]+: " main.log supplementary.log \
+	  || { echo "ERROR: LaTeX error above; the PDF is not trustworthy"; exit 1; }
 	@! grep -qE "Citation .* undefined|Reference .* undefined" main.log supplementary.log \
 	  || { echo "ERROR: undefined citations/references"; exit 1; }
 	@! grep -hE "Overfull \\\\hbox \([0-9]{2,}\.[0-9]+pt too wide\) in paragraph" main.log supplementary.log \
