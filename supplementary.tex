@@ -17,7 +17,7 @@
 \renewcommand{\thefigure}{S\arabic{figure}}
 
 \title{\textbf{Supplementary Material}\\[4pt]
-\large RapidMACS: MACS3-identical peak calling, 47$\times$ faster}
+\large RapidMACS: MACS3-identical peak calling, 50$\times$ faster}
 \author{Ling-Hong Hung \and Ka Yee Yeung}
 \date{}
 
@@ -30,31 +30,18 @@
 \begin{table}[h]
 \centering
 \small
-\caption{Benchmark datasets. All inputs are public. Each dataset is used in the form its source distributes it; the two ATAC datasets are additionally realigned from the same reads with Chromap Suite, giving six configurations in total. Within every configuration both tools consume the identical file, and
-alignment is excluded from all timings.}
+\caption{Benchmark datasets. All inputs are public. Each dataset is used in the form its source distributes it; the two ATAC datasets are additionally realigned from the same reads with Chromap Suite, giving six configurations in total. Within every configuration both tools consume the identical file, and alignment is excluded from all timings.}
 \begin{tabular}{@{}p{0.15\textwidth}p{0.36\textwidth}p{0.40\textwidth}@{}}
 \toprule
 \textbf{Assay} & \textbf{Dataset} & \textbf{Accessions} \\
 \midrule
-scATAC-seq & 10x Multiome PBMC 3k, GRCh38 ATAC channel. As distributed
-(Cell Ranger ARC fragments, 53{,}015{,}732 rows) and realigned from the same
-FASTQs with Chromap Suite (53{,}969{,}811 rows) &
-\url{https://www.10xgenomics.com/datasets/pbmc-from-a-healthy-donor-granulocytes-removed-through-cell-sorting-3-k-1-standard-2-0-0} \\
+scATAC-seq & 10x Multiome PBMC 3k, GRCh38 ATAC channel. As distributed (Cell Ranger ARC fragments, 53{,}015{,}732 rows) and realigned from the same FASTQs with Chromap Suite (53{,}969{,}811 rows) & \url{https://www.10xgenomics.com/datasets/pbmc-from-a-healthy-donor-granulocytes-removed-through-cell-sorting-3-k-1-standard-2-0-0} \\
 \addlinespace
-Bulk ATAC-seq & ENCODE GM12878, paired-end 100~nt, GRCh38, no control.
-As distributed (filtered alignments) and realigned from the same FASTQs
-with Chromap Suite &
-ENCSR095QNB; BAM ENCFF646NWY; FASTQs ENCFF196VAZ/\allowbreak ENCFF195FRB
-(biological replicate~2 throughout) \\
+Bulk ATAC-seq & ENCODE GM12878, paired-end 100~nt, GRCh38, no control. As distributed (filtered alignments) and realigned from the same FASTQs with Chromap Suite & ENCSR095QNB; BAM ENCFF646NWY; FASTQs ENCFF196VAZ/\allowbreak ENCFF195FRB (biological replicate~2 throughout) \\
 \addlinespace
-ChIP-seq & ENCODE CTCF in NCI-H929 with matched input control &
-Treatment ENCSR634OAQ / ENCFF686KKV
-(\texttt{bedc2707\allowbreak c0be9f6d\allowbreak 61c09edf\allowbreak 811d655e});
-control ENCSR409FGC / ENCFF181CXT
-(\texttt{ffec8961\allowbreak e15783ba\allowbreak fb161fb7\allowbreak ab534568}) \\
+ChIP-seq & ENCODE CTCF in NCI-H929 with matched input control & Treatment ENCSR634OAQ / ENCFF686KKV (\texttt{bedc2707\allowbreak c0be9f6d\allowbreak 61c09edf\allowbreak 811d655e}); control ENCSR409FGC / ENCFF181CXT (\texttt{ffec8961\allowbreak e15783ba\allowbreak fb161fb7\allowbreak ab534568}) \\
 \addlinespace
-CUT\&RUN & K562 CTCF with matched IgG, GEO series GSE172236 &
-Treatment GSM5244531 / SRR14255054; control GSM5244530 / SRR14255053 \\
+CUT\&RUN & K562 CTCF with matched IgG, GEO series GSE172236 & Treatment GSM5244531 / SRR14255054; control GSM5244530 / SRR14255053 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,8 +94,8 @@ The benchmark unit is the standalone executable, including input parsing, peak c
 
 Warm-cache measurement is deliberate. Dropping the Linux page cache requires privileged, host-wide mutation and would disturb unrelated jobs on the shared benchmark host; a full warm-up per configuration gives both implementations the same cache state and avoids charging cold-cache variance to the peak caller. Stage profiling is enabled consistently for RapidMACS runs and its small overhead is included in the reported RapidMACS wall times. All measurements come from one 13th-generation Intel Core i9-13900KF host with no competing CPU- or I/O-intensive jobs. Every input, output directory, and temporary file resided on the same NVMe solid-state device, so neither program was advantaged by storage placement.
 
-\paragraph{MACS3 timing reference.}
-MACS3~v3.0.3's \texttt{PETrackI.pileup\_a\_chromosome\_c} writes its internal paired-end control pileup to \texttt{tmp\_b\_c.txt}. This output is not read by the peak-calling path, and on the datasets used here it is large enough that including it would charge unrelated file I/O to MACS3's measured wall time. For controlled-assay timing only, we therefore removed those four lines; the patch is checked in at \texttt{benchmarks/macs3-3.0.3-no-control-dump.patch}. Stock v3.0.3 generated every parity reference reported here, and the patched and stock executables were verified to produce identical narrowPeak and summits files. Treatment-only ATAC timings are unaffected, as that path does not reach this code. We report this only so the timing comparison is reproducible.
+\paragraph{MACS3 debug output.}
+At the end of \texttt{PETrackI.\allowbreak pileup\_a\_\allowbreak chromosome\_c}, MACS3~v3.0.3 writes the control pileup it has just computed to a file named \texttt{tmp\_b\_c.txt} in the working directory, one line per breakpoint, and then returns that same array to its caller. Nothing reads the file back and no option disables it, so it is produced on every run that has a control. The MACS3 timings reported here are of the released software, with this behaviour in place. Treatment-only runs never reach that code and are unaffected.
 
 % =============================================================================
 \section{Full benchmark matrix}
@@ -116,14 +103,10 @@ MACS3~v3.0.3's \texttt{PETrackI.pileup\_a\_chromosome\_c} writes its internal pa
 \begin{table}[h]
 \centering
 \small
-\caption{Complete-CLI medians with observed ranges over three warm-cache runs
-after one unrecorded warm-up. Every configuration produced narrowPeak and
-summit files byte-identical to MACS3~v3.0.3. Speedups are against that
-configuration's own MACS3 time.\label{tab:s3}}
+\caption{Complete-CLI medians with observed ranges over three warm-cache runs after one unrecorded warm-up. Every configuration produced narrowPeak and summit files byte-identical to MACS3~v3.0.3. Speedups are against that configuration's own MACS3 time.\label{tab:s3}}
 \begin{tabular}{@{}llrrrrr@{}}
 \toprule
-\textbf{Assay} & \textbf{Tool} & \textbf{$T$} & \textbf{Wall (s)} &
-\textbf{Range} & \textbf{RSS (GiB)} & \textbf{Speedup} \\
+\textbf{Assay} & \textbf{Tool} & \textbf{$T$} & \textbf{Wall (s)} & \textbf{Range} & \textbf{RSS (GiB)} & \textbf{Speedup} \\
 \midrule
 scATAC 10x     & MACS3     & 1  & 748.49 & 747.95--748.78 & 2.388 & 1.00$\times$ \\
 scATAC 10x     & RapidMACS & 1  &  57.87 &  57.80--57.88  & 2.838 & 12.93$\times$ \\
@@ -145,15 +128,15 @@ Bulk ATAC Chromap & RapidMACS & 1  &  32.10 &  32.08--32.11  & 1.736 & 3.83$\tim
 Bulk ATAC Chromap & RapidMACS & 4  &  10.74 &  10.69--10.77  & 2.131 & 11.45$\times$ \\
 Bulk ATAC Chromap & RapidMACS & 24 &   6.77 &   6.73--6.82   & 2.717 & 18.16$\times$ \\
 \addlinespace
-CUT\&RUN & MACS3     & 1  &  60.65 &  60.47--61.01  & 0.349 & 1.00$\times$ \\
-CUT\&RUN & RapidMACS & 1  &   9.81 &   9.79--9.82   & 0.458 & 6.18$\times$ \\
-CUT\&RUN & RapidMACS & 4  &   2.98 &   2.98--2.99   & 0.556 & 20.35$\times$ \\
-CUT\&RUN & RapidMACS & 24 &   1.99 &   1.97--2.01   & 0.612 & 30.48$\times$ \\
+CUT\&RUN & MACS3     & 1  &  64.74 &  64.58--64.93  & 0.347 & 1.00$\times$ \\
+CUT\&RUN & RapidMACS & 1  &   9.81 &   9.79--9.82   & 0.458 & 6.60$\times$ \\
+CUT\&RUN & RapidMACS & 4  &   2.98 &   2.98--2.99   & 0.556 & 21.72$\times$ \\
+CUT\&RUN & RapidMACS & 24 &   1.99 &   1.97--2.01   & 0.612 & 32.53$\times$ \\
 \addlinespace
-ChIP-seq & MACS3     & 1  & 409.26 & 408.64--410.54 & 2.745 & 1.00$\times$ \\
-ChIP-seq & RapidMACS & 1  &  96.39 &  96.34--96.41  & 4.744 & 4.25$\times$ \\
-ChIP-seq & RapidMACS & 4  &  27.23 &  27.20--27.28  & 4.874 & 15.03$\times$ \\
-ChIP-seq & RapidMACS & 24 &  12.11 &  11.50--12.50  & 5.436 & 33.80$\times$ \\
+ChIP-seq & MACS3     & 1  & 616.90 & 616.79--623.18 & 2.745 & 1.00$\times$ \\
+ChIP-seq & RapidMACS & 1  &  96.39 &  96.34--96.41  & 4.744 & 6.40$\times$ \\
+ChIP-seq & RapidMACS & 4  &  27.23 &  27.20--27.28  & 4.874 & 22.66$\times$ \\
+ChIP-seq & RapidMACS & 24 &  12.11 &  11.50--12.50  & 5.436 & 50.94$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -161,28 +144,13 @@ ChIP-seq & RapidMACS & 24 &  12.11 &  11.50--12.50  & 5.436 & 33.80$\times$ \\
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.95\textwidth]{f1d_threadscaling.pdf}
-\caption{\textbf{Wall time and peak memory across thread counts.}
-\textbf{(A)} Complete-CLI wall time (log scale) and \textbf{(B)} peak resident
-memory at $T=1,4,24$ versus MACS3~v3.0.3 on the three public
-datasets. Speedups are annotated above RapidMACS bars. Bars are medians of
-three warm-cache runs after one unrecorded warm-up; error bars span the
-observed range. Every measured narrowPeak and summit file is byte-identical to
-MACS3~v3.0.3.}
+\caption{\textbf{Wall time and peak memory across thread counts.} \textbf{(A)} Complete-CLI wall time (log scale) and \textbf{(B)} peak resident memory at $T=1,4,24$ versus MACS3~v3.0.3 on the three public datasets. Speedups are annotated above RapidMACS bars. Bars are medians of three warm-cache runs after one unrecorded warm-up; error bars span the observed range. Every measured narrowPeak and summit file is byte-identical to MACS3~v3.0.3.}
 \end{figure}
 
 % =============================================================================
 \section{Stage-level timings}
 % =============================================================================
-Table~\ref{tab:s4} breaks a RapidMACS run down by pipeline stage for the three
-configurations that exercise the distinct code paths: a streaming fragment
-input, and controlled BAMPE input with and without a matched control. The
-stages listed are the dominant ones rather than an exhaustive partition, so
-they need not sum to the total. Each figure is the time RapidMACS spends in
-that stage; it is not an attribution of the speedup to an individual change,
-which would require running the caller with each optimization disabled in turn.
-A dash marks a stage that does not arise separately on that path: on fragment
-input the treatment pileup and local background are built in the same sweep as
-the signal tracks and are counted on that row.
+Table~\ref{tab:s4} breaks a RapidMACS run down by pipeline stage for the three configurations that exercise the distinct code paths: a streaming fragment input, and controlled BAMPE input with and without a matched control. The stages listed are the dominant ones rather than an exhaustive partition, so they need not sum to the total. Each figure is the time RapidMACS spends in that stage; it is not an attribution of the speedup to an individual change, which would require running the caller with each optimization disabled in turn. A dash marks a stage that does not arise separately on that path: on fragment input the treatment pileup and local background are built in the same sweep as the signal tracks and are counted on that row.
 
 \begin{table}[h]
 \centering
@@ -191,8 +159,7 @@ the signal tracks and are counted on that row.
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}p{0.34\textwidth}rrrrrr@{}}
 \toprule
-& \multicolumn{2}{c}{\textbf{scATAC (FRAG)}} & \multicolumn{2}{c}{\textbf{CUT\&RUN}}
-& \multicolumn{2}{c}{\textbf{ChIP-seq}} \\
+& \multicolumn{2}{c}{\textbf{scATAC (FRAG)}} & \multicolumn{2}{c}{\textbf{CUT\&RUN}} & \multicolumn{2}{c}{\textbf{ChIP-seq}} \\
 \textbf{Pipeline stage} & $T{=}1$ & $T{=}24$ & $T{=}1$ & $T{=}24$ & $T{=}1$ & $T{=}24$ \\
 \midrule
 Input parsing & 6.99 & 6.97 & 6.61 & 1.38 & 25.66 & 3.52 \\
@@ -201,8 +168,7 @@ Treatment pileup & --- & --- & 1.66 & 0.24 & 1.65 & 0.23 \\
 Local background $\lambda$ & --- & --- & 0.98 & 0.12 & 65.04 & 6.97 \\
 $p$-scores and peak regions & 16.68 & 4.98 & 0.48 & 0.16 & 3.91 & 1.21 \\
 \midrule
-\textbf{Complete program} & \textbf{58.88} & \textbf{16.12} & \textbf{9.81} &
-\textbf{1.99} & \textbf{96.39} & \textbf{12.11} \\
+\textbf{Complete program} & \textbf{58.88} & \textbf{16.12} & \textbf{9.81} & \textbf{1.99} & \textbf{96.39} & \textbf{12.11} \\
 \bottomrule
 \end{tabular}
 \end{table}
