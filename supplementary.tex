@@ -30,10 +30,7 @@
 \begin{table}[h]
 \centering
 \small
-\caption{Benchmark datasets. All inputs are public. Each dataset is used in the
-form its source distributes it; the two ATAC datasets are additionally
-realigned from the same reads with Chromap Suite, giving six configurations in
-total. Within every configuration both tools consume the identical file, and
+\caption{Benchmark datasets. All inputs are public. Each dataset is used in the form its source distributes it; the two ATAC datasets are additionally realigned from the same reads with Chromap Suite, giving six configurations in total. Within every configuration both tools consume the identical file, and
 alignment is excluded from all timings.}
 \begin{tabular}{@{}p{0.15\textwidth}p{0.36\textwidth}p{0.40\textwidth}@{}}
 \toprule
@@ -63,11 +60,7 @@ Treatment GSM5244531 / SRR14255054; control GSM5244530 / SRR14255053 \\
 \end{table}
 
 \paragraph{Output identity.}
-Both programs write the same files. The MD5 sums below are of the complete
-narrowPeak and summits files, not of any subset of their columns, and are
-identical for MACS3~v3.0.3 and RapidMACS on every one of the 72 measured runs.
-The benchmark harness aborts if they ever differ, so no timing in this paper
-can come from a build that does not reproduce the output.
+Both programs write the same files. The MD5 sums below are of the complete narrowPeak and summits files, not of any subset of their columns, and are identical for MACS3~v3.0.3 and RapidMACS on every one of the 72 measured runs. The benchmark harness aborts if they ever differ, so no timing in this paper can come from a build that does not reproduce the output.
 
 \begin{center}\small
 \begin{tabular}{@{}llll@{}}
