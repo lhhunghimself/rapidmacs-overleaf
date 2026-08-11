@@ -17,7 +17,7 @@
 \renewcommand{\thefigure}{S\arabic{figure}}
 
 \title{\textbf{Supplementary Material}\\[4pt]
-\large RapidMACS: MACS3-identical peak calling, 47$\times$ faster}
+\large RapidMACS: MACS3-identical peak calling, 45$\times$ faster}
 \author{Ling-Hong Hung \and Ka Yee Yeung}
 \date{}
 
@@ -30,15 +30,25 @@
 \begin{table}[h]
 \centering
 \small
-\caption{Benchmark datasets. All inputs are public; both tools consume the same
-post-alignment file, and alignment is excluded from all timings.}
+\caption{Benchmark datasets. All inputs are public. Each dataset is used in the
+form its source distributes it; the two ATAC datasets are additionally
+realigned from the same reads with Chromap Suite, giving six configurations in
+total. Within every configuration both tools consume the identical file, and
+alignment is excluded from all timings.}
 \begin{tabular}{@{}p{0.15\textwidth}p{0.36\textwidth}p{0.40\textwidth}@{}}
 \toprule
 \textbf{Assay} & \textbf{Dataset} & \textbf{Accessions} \\
 \midrule
-ATAC-seq & 10x Multiome PBMC 3k, GRCh38 ATAC channel;
-53{,}969{,}811 fragment rows &
+scATAC-seq & 10x Multiome PBMC 3k, GRCh38 ATAC channel. As distributed
+(Cell Ranger ARC fragments, 53{,}015{,}732 rows) and realigned from the same
+FASTQs with Chromap Suite (53{,}969{,}811 rows) &
 \url{https://www.10xgenomics.com/datasets/pbmc-from-a-healthy-donor-granulocytes-removed-through-cell-sorting-3-k-1-standard-2-0-0} \\
+\addlinespace
+Bulk ATAC-seq & ENCODE GM12878, paired-end 100~nt, GRCh38, no control.
+As distributed (filtered alignments) and realigned from the same FASTQs
+with Chromap Suite &
+ENCSR095QNB; BAM ENCFF646NWY; FASTQs ENCFF196VAZ/\allowbreak ENCFF195FRB
+(biological replicate~2 throughout) \\
 \addlinespace
 ChIP-seq & ENCODE CTCF in NCI-H929 with matched input control &
 Treatment ENCSR634OAQ / ENCFF686KKV
@@ -55,16 +65,19 @@ Treatment GSM5244531 / SRR14255054; control GSM5244530 / SRR14255053 \\
 \paragraph{Output identity.}
 Both programs write the same files. The MD5 sums below are of the complete
 narrowPeak and summits files, not of any subset of their columns, and are
-identical for MACS3~v3.0.3 and RapidMACS on every one of the 36 measured runs.
+identical for MACS3~v3.0.3 and RapidMACS on every one of the 72 measured runs.
 The benchmark harness aborts if they ever differ, so no timing in this paper
 can come from a build that does not reproduce the output.
 
 \begin{center}\small
 \begin{tabular}{@{}llll@{}}
 \toprule
-\textbf{Assay} & \textbf{Peaks} & \textbf{narrowPeak MD5} & \textbf{summits MD5} \\
+\textbf{Configuration} & \textbf{Peaks} & \textbf{narrowPeak MD5} & \textbf{summits MD5} \\
 \midrule
-ATAC-seq & 50{,}274 & \texttt{bd191dff\allowbreak 5370d17b\allowbreak 260f9dd3\allowbreak 0ce82b28} & \texttt{579c0091\allowbreak 16544117\allowbreak a4e39044\allowbreak 02ed10ef} \\
+scATAC, 10x & 50{,}003 & \texttt{2c0de7c5\allowbreak 06514b0a\allowbreak fef1e433\allowbreak 9c386c9f} & \texttt{c3805d1d\allowbreak 3744ed78\allowbreak e3d589a5\allowbreak 23ad0b09} \\
+scATAC, Chromap & 50{,}274 & \texttt{bd191dff\allowbreak 5370d17b\allowbreak 260f9dd3\allowbreak 0ce82b28} & \texttt{579c0091\allowbreak 16544117\allowbreak a4e39044\allowbreak 02ed10ef} \\
+Bulk ATAC, ENCODE & 74{,}000 & \texttt{cffa2d33\allowbreak d9e8b78f\allowbreak 199e92fa\allowbreak 8892ff7f} & \texttt{a61013dd\allowbreak fabf555b\allowbreak 14db0ade\allowbreak 8606cac4} \\
+Bulk ATAC, Chromap & 78{,}574 & \texttt{aa1cb40c\allowbreak add9d5bf\allowbreak 8f1cca00\allowbreak dcae0e87} & \texttt{e3d3ee3f\allowbreak 541e8b1f\allowbreak 370892f1\allowbreak 9aece20a} \\
 CUT\&RUN & 9{,}097 & \texttt{0fc36102\allowbreak 443eae22\allowbreak 6578201f\allowbreak 18df67c3} & \texttt{1cd24d0c\allowbreak 399a5ea0\allowbreak b131f8c6\allowbreak e5fe9c7e} \\
 ChIP-seq & 33{,}985 & \texttt{5463ccac\allowbreak f4af902c\allowbreak 3ad6f388\allowbreak bd141fc4} & \texttt{82ae9573\allowbreak bb99733e\allowbreak 30635cef\allowbreak 96da1f69} \\
 \bottomrule
@@ -94,7 +107,7 @@ rapidmacs --preset chip -t treat.bam -c control.bam -g hs -n NAME \
 % =============================================================================
 The benchmark unit is the standalone executable, including input parsing, peak calling, and narrowPeak/summits output; internal library-only timings are diagnostic and are not the reported comparison. For every assay/tool/thread configuration the harness runs one unrecorded warm-up followed by three recorded repetitions, and reports the median wall time and median maximum RSS with the observed range. Wall time and maximum RSS come from GNU \texttt{/usr/bin/time}; each run writes to a separate directory.
 
-Warm-cache measurement is deliberate. Dropping the Linux page cache requires privileged, host-wide mutation and would disturb unrelated jobs on the shared benchmark host; a full warm-up per configuration gives both implementations the same cache state and avoids charging cold-cache variance to the peak caller. Stage profiling is enabled consistently for RapidMACS runs and its small overhead is included in the reported RapidMACS wall times. All measurements come from one 13th-generation Intel Core i9-13900KF host with no competing CPU- or I/O-intensive jobs.
+Warm-cache measurement is deliberate. Dropping the Linux page cache requires privileged, host-wide mutation and would disturb unrelated jobs on the shared benchmark host; a full warm-up per configuration gives both implementations the same cache state and avoids charging cold-cache variance to the peak caller. Stage profiling is enabled consistently for RapidMACS runs and its small overhead is included in the reported RapidMACS wall times. All measurements come from one 13th-generation Intel Core i9-13900KF host with no competing CPU- or I/O-intensive jobs. Every input, output directory, and temporary file resided on the same NVMe solid-state device, so neither program was advantaged by storage placement.
 
 \paragraph{MACS3 timing reference.}
 MACS3~v3.0.3's \texttt{PETrackI.pileup\_a\_chromosome\_c} writes its internal paired-end control pileup to \texttt{tmp\_b\_c.txt}. This output is not read by the peak-calling path, and on the datasets used here it is large enough that including it would charge unrelated file I/O to MACS3's measured wall time. For controlled-assay timing only, we therefore removed those four lines; the patch is checked in at \texttt{benchmarks/macs3-3.0.3-no-control-dump.patch}. Stock v3.0.3 generated every parity reference reported here, and the patched and stock executables were verified to produce identical narrowPeak and summits files. Treatment-only ATAC timings are unaffected, as that path does not reach this code. We report this only so the timing comparison is reproducible.
@@ -107,26 +120,42 @@ MACS3~v3.0.3's \texttt{PETrackI.pileup\_a\_chromosome\_c} writes its internal pa
 \small
 \caption{Complete-CLI medians with observed ranges over three warm-cache runs
 after one unrecorded warm-up. Every configuration produced narrowPeak and
-summit files byte-identical to MACS3~v3.0.3.}
+summit files byte-identical to MACS3~v3.0.3. Speedups are against that
+configuration's own MACS3 time.\label{tab:s3}}
 \begin{tabular}{@{}llrrrrr@{}}
 \toprule
 \textbf{Assay} & \textbf{Tool} & \textbf{$T$} & \textbf{Wall (s)} &
 \textbf{Range} & \textbf{RSS (GiB)} & \textbf{Speedup} \\
 \midrule
-ATAC     & MACS3     & 1  & 743.07 & 740.31--746.04 & 2.397 & 1.00$\times$ \\
-ATAC     & RapidMACS & 1  &  59.14 &  57.78--59.23  & 2.802 & 12.56$\times$ \\
-ATAC     & RapidMACS & 4  &  24.97 &  24.93--25.10  & 3.080 & 29.76$\times$ \\
-ATAC     & RapidMACS & 24 &  15.69 &  15.47--15.78  & 4.053 & 47.36$\times$ \\
+scATAC 10x     & MACS3     & 1  & 748.49 & 747.95--748.78 & 2.388 & 1.00$\times$ \\
+scATAC 10x     & RapidMACS & 1  &  57.87 &  57.80--57.88  & 2.838 & 12.93$\times$ \\
+scATAC 10x     & RapidMACS & 4  &  24.13 &  24.12--24.23  & 3.143 & 31.02$\times$ \\
+scATAC 10x     & RapidMACS & 24 &  16.37 &  16.31--16.43  & 3.933 & 45.72$\times$ \\
 \addlinespace
-CUT\&RUN & MACS3     & 1  &  59.58 &  59.45--59.73  & 0.345 & 1.00$\times$ \\
-CUT\&RUN & RapidMACS & 1  &   9.73 &   9.69--9.75   & 0.459 & 6.12$\times$ \\
-CUT\&RUN & RapidMACS & 4  &   2.96 &   2.96--2.97   & 0.560 & 20.13$\times$ \\
-CUT\&RUN & RapidMACS & 24 &   2.03 &   2.01--2.04   & 0.612 & 29.35$\times$ \\
+scATAC Chromap & MACS3     & 1  & 758.62 & 758.59--760.17 & 2.422 & 1.00$\times$ \\
+scATAC Chromap & RapidMACS & 1  &  58.88 &  58.88--58.89  & 2.801 & 12.88$\times$ \\
+scATAC Chromap & RapidMACS & 4  &  25.38 &  25.24--25.38  & 3.121 & 29.89$\times$ \\
+scATAC Chromap & RapidMACS & 24 &  16.12 &  15.95--16.31  & 3.974 & 47.06$\times$ \\
 \addlinespace
-ChIP-seq & MACS3     & 1  & 402.49 & 400.10--403.34 & 2.705 & 1.00$\times$ \\
-ChIP-seq & RapidMACS & 1  &  93.60 &  93.59--93.62  & 4.763 & 4.30$\times$ \\
-ChIP-seq & RapidMACS & 4  &  27.05 &  26.99--27.06  & 4.889 & 14.88$\times$ \\
-ChIP-seq & RapidMACS & 24 &  11.96 &  11.88--12.15  & 5.346 & 33.65$\times$ \\
+Bulk ATAC ENCODE  & MACS3     & 1  & 146.63 & 146.44--147.41 & 1.074 & 1.00$\times$ \\
+Bulk ATAC ENCODE  & RapidMACS & 1  &  41.49 &  41.41--41.53  & 1.755 & 3.53$\times$ \\
+Bulk ATAC ENCODE  & RapidMACS & 4  &  13.14 &  13.10--13.14  & 2.082 & 11.16$\times$ \\
+Bulk ATAC ENCODE  & RapidMACS & 24 &   7.28 &   7.28--7.40   & 2.684 & 20.14$\times$ \\
+\addlinespace
+Bulk ATAC Chromap & MACS3     & 1  & 122.92 & 122.85--124.58 & 1.064 & 1.00$\times$ \\
+Bulk ATAC Chromap & RapidMACS & 1  &  32.10 &  32.08--32.11  & 1.736 & 3.83$\times$ \\
+Bulk ATAC Chromap & RapidMACS & 4  &  10.74 &  10.69--10.77  & 2.131 & 11.45$\times$ \\
+Bulk ATAC Chromap & RapidMACS & 24 &   6.77 &   6.73--6.82   & 2.717 & 18.16$\times$ \\
+\addlinespace
+CUT\&RUN & MACS3     & 1  &  60.65 &  60.47--61.01  & 0.349 & 1.00$\times$ \\
+CUT\&RUN & RapidMACS & 1  &   9.81 &   9.79--9.82   & 0.458 & 6.18$\times$ \\
+CUT\&RUN & RapidMACS & 4  &   2.98 &   2.98--2.99   & 0.556 & 20.35$\times$ \\
+CUT\&RUN & RapidMACS & 24 &   1.99 &   1.97--2.01   & 0.612 & 30.48$\times$ \\
+\addlinespace
+ChIP-seq & MACS3     & 1  & 409.26 & 408.64--410.54 & 2.745 & 1.00$\times$ \\
+ChIP-seq & RapidMACS & 1  &  96.39 &  96.34--96.41  & 4.744 & 4.25$\times$ \\
+ChIP-seq & RapidMACS & 4  &  27.23 &  27.20--27.28  & 4.874 & 15.03$\times$ \\
+ChIP-seq & RapidMACS & 24 &  12.11 &  11.50--12.50  & 5.436 & 33.80$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,7 +172,44 @@ observed range. Every measured narrowPeak and summit file is byte-identical to
 MACS3~v3.0.3.}
 \end{figure}
 
+% =============================================================================
+\section{Stage-level timings}
+% =============================================================================
+Table~\ref{tab:s4} breaks a RapidMACS run down by pipeline stage for the three
+configurations that exercise the distinct code paths: a streaming fragment
+input, and controlled BAMPE input with and without a matched control. The
+stages listed are the dominant ones rather than an exhaustive partition, so
+they need not sum to the total. Each figure is the time RapidMACS spends in
+that stage; it is not an attribution of the speedup to an individual change,
+which would require running the caller with each optimization disabled in turn.
+A dash marks a stage that does not arise separately on that path: on fragment
+input the treatment pileup and local background are built in the same sweep as
+the signal tracks and are counted on that row.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Median RapidMACS stage times (s), same runs as Table~\ref{tab:s3}.\label{tab:s4}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{0.34\textwidth}rrrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{\textbf{scATAC (FRAG)}} & \multicolumn{2}{c}{\textbf{CUT\&RUN}}
+& \multicolumn{2}{c}{\textbf{ChIP-seq}} \\
+\textbf{Pipeline stage} & $T{=}1$ & $T{=}24$ & $T{=}1$ & $T{=}24$ & $T{=}1$ & $T{=}24$ \\
+\midrule
+Input parsing & 6.99 & 6.97 & 6.61 & 1.38 & 25.66 & 3.52 \\
+Track construction & 28.47 & 3.20 & 0.06 & 0.06 & 0.05 & 0.06 \\
+Treatment pileup & --- & --- & 1.66 & 0.24 & 1.65 & 0.23 \\
+Local background $\lambda$ & --- & --- & 0.98 & 0.12 & 65.04 & 6.97 \\
+$p$-scores and peak regions & 16.68 & 4.98 & 0.48 & 0.16 & 3.91 & 1.21 \\
+\midrule
+\textbf{Complete program} & \textbf{58.88} & \textbf{16.12} & \textbf{9.81} &
+\textbf{1.99} & \textbf{96.39} & \textbf{12.11} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Raw data.}
-All 36 measured invocations, per-run checksums, stage profiles, host metadata, and the exact benchmarked executable hash are archived with the release at \url{https://github.com/morphic-bio/rapidmacs}.
+All 72 measured invocations, per-run checksums, stage profiles, host metadata, and the exact benchmarked executable hash are archived with the release at \url{https://github.com/morphic-bio/rapidmacs}.
 
 \end{document}
