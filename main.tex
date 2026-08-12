@@ -111,7 +111,7 @@ MACS3's documentation leaves two things unclear: the tie-break it applies when s
 \caption{\textbf{Complete-program wall time against MACS3~v3.0.3 across six input configurations.} Each row is one benchmark input, used either as its source distributes it or realigned by Chromap Suite from the same FASTQ files. Times are wall-clock seconds for the complete command-line program, medians of three recorded warm-cache runs after one unrecorded warm-up. All runs ran on a single server (i9-13900KF, 128 GB RAM) with every input, output, and temporary file on the same NVMe device. $T$ is the number of RapidMACS threads. MACS3's peak-calling path is single-threaded so each row has only one MACS3 time. Parenthesized values are speedups against it. Peak counts differ between rows because the inputs differ. Within every row, and in every run, both programs produced byte-identical narrowPeak and summit files. Stage specific timings are in Supplementary Section~S5.\label{tab:stages}}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}p{0.28\textwidth}rrrrr@{}}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
 \toprule
 & \textbf{MACS3} & \multicolumn{3}{c}{\textbf{RapidMACS}} & \\
 \cline{3-5}
@@ -125,7 +125,7 @@ Bulk ATAC-seq, Chromap BAM & 122.92 & 32.10 (3.8$\times$) & 10.74 (11.4$\times$)
 ChIP-seq, ENCODE BAM $+$ input control & 616.90 & 96.39 (6.4$\times$) & 27.23 (22.7$\times$) & 12.11 (50.9$\times$) & 33{,}985 \\
 CUT\&RUN, GEO BAM $+$ IgG control & 64.74 & 9.81 (6.6$\times$) & 2.98 (21.7$\times$) & 1.99 (32.5$\times$) & 9{,}097 \\
 \botrule
-\end{tabular}
+\end{tabular*}
 \end{minipage}
 \end{center}
 \end{table*}
