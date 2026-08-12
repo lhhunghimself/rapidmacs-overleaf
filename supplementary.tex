@@ -140,7 +140,7 @@ ChIP-seq & RapidMACS & 24 &  12.11 &  11.50--12.50  & 5.436 & 50.94$\times$ \\
 % =============================================================================
 \section{MACS3 with the extra file removed}
 % =============================================================================
-Table~\ref{tab:s5} repeats the two controlled measurements against a MACS3 build with the four lines described in Results removed. The patch is checked in at \texttt{benchmarks/\allowbreak macs3-3.0.3-\allowbreak no-control-dump.patch}. Both builds produce identical narrowPeak and summits files, so the difference is entirely the cost of writing the file. It is much the larger on ChIP-seq, whose 39.3~M-fragment control dwarfs CUT\&RUN's 2.4~M: 207.64~s, a third of the released build's run. Removing it leaves single-cell ATAC-seq the fastest configuration in the paper, at 47.06$\times$.
+Table~\ref{tab:s5} repeats the two controlled measurements against a MACS3 build with the four lines described in Results removed. The patch is checked in at \texttt{paper/\allowbreak macs3-3.0.3-\allowbreak no-control-dump.patch}. Both builds produce identical narrowPeak and summits files, so the difference is entirely the cost of writing the file. It is much the larger on ChIP-seq, whose 39.3~M-fragment control dwarfs CUT\&RUN's 2.4~M: 207.64~s, a third of the released build's run. Removing it leaves single-cell ATAC-seq the fastest configuration in the paper, at 47.06$\times$.
 
 \begin{table}[h]
 \centering
