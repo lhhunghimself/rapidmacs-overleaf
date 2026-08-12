@@ -95,7 +95,7 @@ The benchmark unit is the standalone executable, including input parsing, peak c
 Warm-cache measurement is deliberate. Dropping the Linux page cache requires privileged, host-wide mutation and would disturb unrelated jobs on the shared benchmark host; a full warm-up per configuration gives both implementations the same cache state and avoids charging cold-cache variance to the peak caller. Stage profiling is enabled consistently for RapidMACS runs and its small overhead is included in the reported RapidMACS wall times. All measurements come from one 13th-generation Intel Core i9-13900KF host with no competing CPU- or I/O-intensive jobs. Every input, output directory, and temporary file resided on the same NVMe solid-state device, so neither program was advantaged by storage placement.
 
 \paragraph{MACS3 debug output.}
-At the end of \texttt{PETrackI.\allowbreak pileup\_a\_\allowbreak chromosome\_c}, MACS3~v3.0.3 writes the control pileup it has just computed to a file named \texttt{tmp\_b\_c.txt} in the working directory, one line per breakpoint, and then returns that same array to its caller. Nothing reads the file back and no option disables it, so it is produced on every run that has a control. The MACS3 timings reported here are of the released software, with this behaviour in place. Treatment-only runs never reach that code and are unaffected.
+At the end of \texttt{PETrackI.\allowbreak pileup\_a\_\allowbreak chromosome\_c}, MACS3~v3.0.3 writes the control pileup it has just computed to a file named \texttt{tmp\_b\_c.txt} in the working directory, one line per breakpoint, and then returns that same array to its caller. Nothing reads the file back and no option disables it, so it is produced on every run that has a control. ChIP-seq, CUT\&RUN, and scATAC 10x were measured against the released build, so their MACS3 timings include this write wherever a control is present. Treatment-only runs never reach the code at all, and the three remaining treatment-only configurations were measured against a build with the four lines removed---for those the executed path is identical either way. Running scATAC 10x against both builds bounds the residual difference at 0.13\%: 747.55~s released against 748.49~s.
 
 % =============================================================================
 \section{Full benchmark matrix}
@@ -108,10 +108,10 @@ At the end of \texttt{PETrackI.\allowbreak pileup\_a\_\allowbreak chromosome\_c}
 \toprule
 \textbf{Assay} & \textbf{Tool} & \textbf{$T$} & \textbf{Wall (s)} & \textbf{Range} & \textbf{RSS (GiB)} & \textbf{Speedup} \\
 \midrule
-scATAC 10x     & MACS3     & 1  & 748.49 & 747.95--748.78 & 2.388 & 1.00$\times$ \\
-scATAC 10x     & RapidMACS & 1  &  57.87 &  57.80--57.88  & 2.838 & 12.93$\times$ \\
-scATAC 10x     & RapidMACS & 4  &  24.13 &  24.12--24.23  & 3.143 & 31.02$\times$ \\
-scATAC 10x     & RapidMACS & 24 &  16.37 &  16.31--16.43  & 3.933 & 45.72$\times$ \\
+scATAC 10x     & MACS3     & 1  & 747.55 & 747.32--747.75 & 2.359 & 1.00$\times$ \\
+scATAC 10x     & RapidMACS & 1  &  57.87 &  57.80--57.88  & 2.838 & 12.92$\times$ \\
+scATAC 10x     & RapidMACS & 4  &  24.13 &  24.12--24.23  & 3.143 & 30.98$\times$ \\
+scATAC 10x     & RapidMACS & 24 &  16.37 &  16.31--16.43  & 3.933 & 45.67$\times$ \\
 \addlinespace
 scATAC Chromap & MACS3     & 1  & 758.62 & 758.59--760.17 & 2.422 & 1.00$\times$ \\
 scATAC Chromap & RapidMACS & 1  &  58.88 &  58.88--58.89  & 2.801 & 12.88$\times$ \\
