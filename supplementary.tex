@@ -148,6 +148,30 @@ ChIP-seq & RapidMACS & 24 &  12.11 &  11.50--12.50  & 5.436 & 50.94$\times$ \\
 \end{figure}
 
 % =============================================================================
+\section{MACS3 with the debug write removed}
+% =============================================================================
+Table~\ref{tab:s5} repeats the two controlled measurements against a MACS3 build with the four lines of debug output described in Section~S2 removed. The patch is checked in at \texttt{benchmarks/\allowbreak macs3-3.0.3-\allowbreak no-control-dump.patch}. Both builds produce identical narrowPeak and summits files, so the difference is entirely the cost of writing a file that nothing reads. It is much the larger on ChIP-seq, whose control is the biggest input in the matrix at 39.3~M fragments: 207.64~s, a third of the released build's run. Removing it leaves single-cell ATAC-seq the fastest configuration in the paper, at 47.06$\times$.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Controlled assays measured against released MACS3~v3.0.3 and against the same version with the debug write removed. RapidMACS is unchanged between the two and is shown once. Medians of three warm-cache runs after one unrecorded warm-up, same host and NVMe placement throughout.\label{tab:s5}}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+& & \textbf{MACS3} & \multicolumn{3}{c}{\textbf{Speedup at $T=$}} \\
+\cmidrule(lr){4-6}
+\textbf{Assay} & \textbf{MACS3 build} & \textbf{Wall (s)} & 1 & 4 & 24 \\
+\midrule
+ChIP-seq & as released      & 616.90 & 6.40$\times$ & 22.66$\times$ & 50.94$\times$ \\
+ChIP-seq & debug write removed & 409.26 & 4.25$\times$ & 15.03$\times$ & 33.80$\times$ \\
+\addlinespace
+CUT\&RUN & as released      &  64.74 & 6.60$\times$ & 21.72$\times$ & 32.53$\times$ \\
+CUT\&RUN & debug write removed &  60.65 & 6.18$\times$ & 20.35$\times$ & 30.48$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
 \section{Stage-level timings}
 % =============================================================================
 Table~\ref{tab:s4} breaks a RapidMACS run down by pipeline stage for the three configurations that exercise the distinct code paths: a streaming fragment input, and controlled BAMPE input with and without a matched control. The stages listed are the dominant ones rather than an exhaustive partition, so they need not sum to the total. Each figure is the time RapidMACS spends in that stage; it is not an attribution of the speedup to an individual change, which would require running the caller with each optimization disabled in turn. A dash marks a stage that does not arise separately on that path: on fragment input the treatment pileup and local background are built in the same sweep as the signal tracks and are counted on that row.
