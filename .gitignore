@@ -9,6 +9,8 @@
 *.spl
 main.pdf
 supplementary.pdf
+preprint.pdf
+rapidmacs-preprint.pdf
 output.*
 
 # Editor/assistant conversation history — never publish
