@@ -28,14 +28,15 @@
 % -----------------------------------------------------------------------------
 % Journal metadata (filled in by OUP during production; leave as-is on submission)
 % -----------------------------------------------------------------------------
-\journaltitle{Bioinformatics}
-\DOI{DOI added during production}
+% Preprint build: no journal, volume, issue, DOI or publication date yet.
+\journaltitle{}
+\DOI{}
 \copyrightyear{2026}
 \pubyear{2026}
-\vol{00}
-\issue{0}
-\access{Advance Access Publication Date: Day Month Year}
-\appnotes{Applications Note}
+\vol{}
+\issue{}
+\access{}
+\appnotes{Applications Note (preprint)}
 
 \firstpage{1}
 
@@ -62,13 +63,15 @@
 \abstract{
 \subheading{Motivation:} MACS3 is a comprehensive peak-calling toolkit whose subcommands span single- and paired-end data, narrow and broad peaks, and a range of signal-track utilities. However, many ATAC-seq and multiomic pipelines, including our own, use just one of those capabilities: narrow peak calling. A single analysis may call peaks under different conditions, so a per-call saving is multiplied and the time recovered can be substantial. Furthermore, we wanted an efficient and embeddable narrow peak caller that could be integrated directly with our Chromap Suite aligner, so we wrote RapidMACS.
 \subheading{Results:} RapidMACS is a narrow peak caller optimized for this purpose, building its signal tracks in a single lazy sweep that avoids a global sort, processing chromosomes in parallel, and keeping intermediates in memory rather than creating temporary files. In benchmarks involving single-cell ATAC-seq, bulk ATAC-seq, ChIP-seq, and CUT\&RUN, it is 3.5--51$\times$ faster than MACS3~v3.0.3 depending on the applications and number of threads used. More importantly, the output is byte-identical. This means that any downstream analysis using RapidMACS will produce identical results to those using MACS3. The speed gains are largely due to these algorithmic changes rather than the choice of language, because MACS3's peak-calling code is itself compiled (Cython). RapidMACS depends only on htslib and zlib and links as a small static archive without a Python or Cython runtime.
-\subheading{Availability and implementation:} RapidMACS is open source under the MIT license at \url{https://github.com/morphic-bio/rapidmacs}, with both a standalone CLI executable (\texttt{rapidmacs}) and a linkable C++ library. Prebuilt containers for x86-64 and arm64 are published as \texttt{biodepot/rapidmacs} on Docker Hub.
+\subheading{Availability and implementation:} RapidMACS is open source under the MIT license at \url{https://github.com/morphic-bio/rapidmacs}, with both a standalone CLI executable (\texttt{rapidmacs}) and a linkable C++ library. Prebuilt containers for x86-64 and arm64 are published as \texttt{biodepot/rapidmacs} and \texttt{ghcr.io/\allowbreak morphic-bio/\allowbreak rapidmacs}.
 \subheading{Contact:} \href{mailto:lhhung@uw.edu}{lhhung@uw.edu}
 \subheading{Supplementary information:} Supplementary data are available at \textit{Bioinformatics} online.}
 
 \keywords{peak calling, MACS3, ATAC-seq, single-cell ATAC-seq, CUT\&RUN, ChIP-seq, C++ library}
 
 \maketitle
+\pagestyle{plain}
+\thispagestyle{plain}
 
 % -----------------------------------------------------------------------------
 \section{Introduction}
