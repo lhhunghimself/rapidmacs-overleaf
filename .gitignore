@@ -18,3 +18,4 @@ output.*
 .cursorindexingignore
 .cursor/
 .vscode/
+preprint.tex
