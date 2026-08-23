@@ -1,0 +1,15 @@
+Version 2 revises the reported timings to RapidMACS v1.0.1 and corrects two errors in version 1.
+
+1. Timings updated to RapidMACS v1.0.1. Version 1 reported v1.0.0. Version 1.0.1 is a correctness release for exact MACS3 v3.0.3 callpeak compatibility: it matches CallPeakUnit's strict "score greater than cutoff" region predicate, so a score exactly equal to the requested cutoff is no longer included in a peak boundary, and it applies callpeak's default fold-enrichment cutoff of 1.0 after peak construction. Every RapidMACS wall time in Table 1, Supplementary Table S3 and Supplementary Table S5 is re-measured. The MACS3 comparators are unchanged by that release and were not re-run.
+
+2. Output identity is unaffected. Peak counts and every narrowPeak and summits MD5 sum are identical to version 1, and all six configurations passed complete byte-for-byte parity against MACS3 v3.0.3 on every measured run. Supplementary Table S1 is therefore unchanged, and the byte-identity claim stands as stated.
+
+3. Derived figures follow from the new timings. Single-thread speedup on fragment input is 12.7x (was 12.9x); on sorted BAMPE it is 3.5 to 6.5x (was 3.5 to 6.6x); thread scaling from 1 to 24 threads is 3.6 to 8.0x (was 3.5 to 8.0x). In the paragraph on the extra file that MACS3 writes when a control is present, the ChIP-seq figures are 33.6x and 50.6x (were 33.8x and 50.9x), and single-cell ATAC-seq remains the fastest configuration at 46.5x (was 47.1x). The headline range of 3.5 to 51x is unchanged.
+
+4. Correction: peak memory. Version 1 gave RapidMACS peak resident set size as 0.46 to 5.44 GiB. The upper figure was the largest single observation rather than the median reported everywhere else in the paper. The revised range is 0.46 to 5.40 GiB, consistent with Supplementary Table S3, and the ratio to MACS3 is 1.2 to 2.5 times (was 1.2 to 2.6).
+
+5. Correction: container registry. Version 1 listed a second container registry that is not publicly accessible. The availability statement now names only biodepot/rapidmacs on Docker Hub, which is public and serves the version reported here.
+
+6. The software version used for the reported results is now stated explicitly, in the availability statement and in Supplementary Section S2.
+
+No conclusions change. Neither the byte-identity result nor the headline speedup range is affected.
