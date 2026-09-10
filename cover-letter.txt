@@ -1,0 +1,84 @@
+Dear Editors,
+
+We submit "RapidMACS: MACS3-identical peak calling, 50x faster" for
+consideration as an Applications Note in the Genome analysis section.
+
+MACS has been the standard narrow peak caller for chromatin assays for nearly
+two decades, and remains the caller that Signac, ArchR, SnapATAC2 and SCENIC+
+invoke, and that ENCODE's ATAC-seq and transcription-factor peak sets are
+built from. Many pipelines, including ours in the MorPhiC consortium, use
+exactly one of its fourteen subcommands: narrow peak calling. RapidMACS is a
+C++ reimplementation of that one path, written from MACS3's published
+description rather than ported from its code.
+
+The claim that distinguishes it from other fast peak callers is not that it
+agrees closely with MACS3, but that its output is byte-identical to MACS3
+v3.0.3: every narrowPeak and summit field, and the full-file MD5 sums, across
+single-cell ATAC-seq, bulk ATAC-seq, ChIP-seq and CUT&RUN, on fragment and
+BAMPE input, with and without a matched control. Anything computed downstream
+therefore returns exactly what it would have returned from MACS3, so the
+substitution can be made part-way through an established analysis without
+putting earlier comparisons in question. It is 3.5 to 51 times faster
+depending on assay, input format and thread count, and the gains come from
+specialisation rather than language choice, since MACS3's peak-calling code is
+itself compiled Cython.
+
+We think this fits an Applications Note rather than a research paper: the
+contribution is a tool and its exact equivalence, not a new statistical
+method. The peak-calling statistics are MACS3's.
+
+Everything needed to check the claims is public. The source is MIT-licensed at
+https://github.com/morphic-bio/rapidmacs, released as v1.0.1, with
+multi-architecture containers on Docker Hub. The repository includes the
+complete benchmark matrix, every recorded measurement with per-run checksums,
+and a script that downloads a public dataset, runs both callers, and exits
+non-zero unless the output matches the published checksums.
+
+A preprint of this work is posted on bioRxiv.
+
+Funding: L.H.H. and K.Y.Y. at the University of Washington are supported by
+National Institutes of Health (NIH) grant U24HG012674. K.Y.Y. is also
+supported by the Virginia and Prentice Bloedel Endowment at the University of
+Washington.
+
+Competing interests: L.H.H. and K.Y.Y. have equity interest in Biodepot LLC.
+The terms of this arrangement have been reviewed and approved by the
+University of Washington in accordance with its policies governing outside
+work and financial conflicts of interest in research.
+
+Suggested reviewers
+
+We have no reviewers to exclude. The following have the relevant expertise;
+several are authors of the tools we benchmark against or interoperate with,
+which we note in the interest of transparency.
+
+- Tao Liu, Roswell Park Comprehensive Cancer Center. Maintainer of MACS3 and
+  an author of the MACS and Chromap papers. Best placed to assess the parity
+  claim against MACS3 v3.0.3. Email: tao.liu@roswellpark.org (please verify)
+- X. Shirley Liu, senior author of the original MACS paper and of Chromap.
+  Email: xsliu.res@gmail.com
+- Heng Li, Dana-Farber Cancer Institute and Harvard Medical School. Senior
+  author of Chromap, which our aligner extends, and of htslib, on which
+  RapidMACS depends. Email: hli@ds.dfci.harvard.edu
+- William J. Greenleaf, Stanford University. Co-developer of ATAC-seq and
+  senior author of ArchR, one of the downstream tools whose peak-calling
+  commands we reproduce. Email: wjg@stanford.edu
+- Howard Y. Chang, Stanford University. Senior author of ArchR. Email:
+  howchang@stanford.edu
+- Jason D. Buenrostro, Harvard University and the Broad Institute.
+  Co-developer of ATAC-seq. Email: jason_buenrostro@harvard.edu
+- Rahul Satija, New York Genome Center and New York University. Senior author
+  of Signac. Email: rsatija@nygenome.org
+- Bing Ren, University of California San Diego. Senior author of SnapATAC2 and
+  a long-standing ENCODE investigator. Email: bren@ucsd.edu
+- Stein Aerts, VIB-KU Leuven. Senior author of SCENIC+. Email:
+  stein.aerts@vib.be
+
+Thank you for considering our submission.
+
+Sincerely,
+
+Ling-Hong Hung and Ka Yee Yeung
+School of Engineering and Technology
+University of Washington Tacoma
+lhhung@uw.edu
